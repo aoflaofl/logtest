@@ -3,12 +3,20 @@ package com.cisco.benchmark;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
-import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
 
 @State(Scope.Thread)
 public class MyBenchmark {
-  private static final Logger logger = LoggerFactory.getLogger(MyBenchmark.class);
+  private static final Logger logger = (Logger) LoggerFactory.getLogger(MyBenchmark.class);
+
+  static {
+    // Set to TRACE to benchmark logging with output.
+    logger.setLevel(Level.TRACE);
+  }
+
   private static final UltimateAnswer answer = new UltimateAnswer();
 
   @Benchmark
@@ -17,7 +25,7 @@ public class MyBenchmark {
     /*
      * Don't do this. It creates a StringBuilder to concatenate the Strings.
      */
-    logger.info("Logging: " + answer);
+    logger.trace("Logging: " + answer);
   }
 
   @Benchmark
@@ -26,7 +34,7 @@ public class MyBenchmark {
      * Don't do this. Won't get logged (because it's a trace message), but
      * toString() will still be called.
      */
-    logger.info("Logging: {}", answer.toString());
+    logger.trace("Logging: {}", answer.toString());
   }
 
   @Benchmark
@@ -35,7 +43,7 @@ public class MyBenchmark {
     /*
      * Do this. Won't call toString() unless logging is at trace level.
      */
-    logger.info("Logging: {}", answer);
+    logger.trace("Logging: {}", answer);
   }
 
   @Benchmark
@@ -44,7 +52,7 @@ public class MyBenchmark {
     /*
      * Don't do this. It creates a StringBuilder to concatenate the Strings.
      */
-    logger.info(String.format("Logging: %s", answer));
+    logger.trace(String.format("Logging: %s", answer));
   }
 
   @Benchmark
@@ -53,8 +61,19 @@ public class MyBenchmark {
     /*
      * Don't do this. It creates a StringBuilder to concatenate the Strings.
      */
-    if (logger.isInfoEnabled()) {
-      logger.info("Logging: " + answer);
+    if (logger.isTraceEnabled()) {
+      logger.trace("Logging: " + answer);
     }
   }
+  
+  @Benchmark
+  public void testTwoArgumentsNoObject() {
+    logger.trace("Logging: {}, {}", answer, answer.toTraceLoggingString());
+  }
+  
+  @Benchmark
+  public void testTwoArgumentsWithObject() {
+    logger.trace("Logging: {}, {}", new Object[] {answer, answer.toTraceLoggingString()});
+  }
+  
 }
